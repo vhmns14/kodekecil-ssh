@@ -1,0 +1,32 @@
+name: kodekecil_ssh
+description: "KodeKecil SSH — Open source SSH client for Android & Linux. Termius, but cheapest (free)."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # SSH
+  dartssh2: ^2.10.0
+  # Terminal emulator
+  xterm: ^4.0.0
+  # Secure storage (Android Keystore / Linux Secret Service via libsecret)
+  flutter_secure_storage: ^11.2.0
+  # File picker for SFTP upload
+  file_picker: ^13.1.0
+  # Local helpers
+  path: ^1.8.3
+  path_provider: ^2.1.2
+  # State
+  provider: ^6.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
