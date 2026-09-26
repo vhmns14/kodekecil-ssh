@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:xterm/xterm.dart';
 import '../models/host.dart';
 import '../services/ssh_service.dart';
+import '../theme.dart';
 import 'sftp_screen.dart';
 
 class TerminalScreen extends StatefulWidget {
@@ -23,8 +24,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
   SSHConnection? _conn;
   SSHSession? _shell;
   StreamSubscription<Uint8List>? _shellSub;
-  String _status = 'Connecting…';
+  bool _connected = false;
   bool _failed = false;
+  String _hint = 'Connecting…';
 
   @override
   void initState() {
@@ -35,38 +37,37 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
   Future<void> _connect() async {
     try {
-      _conn = await SSHService()
-          .connect(widget.host, password: widget.password);
+      _conn =
+          await SSHService().connect(widget.host, password: widget.password);
       _shell = await _conn!.openShell();
       _shell!.resizeTerminal(_terminal.viewWidth, _terminal.viewHeight);
 
       _terminal.onResize = (w, h, pw, ph) => _shell?.resizeTerminal(w, h);
-
       _terminal.onOutput = (data) {
         _shell?.stdin.add(Uint8List.fromList(data.codeUnits));
       };
 
       _shellSub = _shell!.stdout.listen(
         (data) => _terminal.write(String.fromCharCodes(data)),
-        onDone: () => _setStatus('Connection closed.', failed: false),
-        onError: (e) => _setStatus('Error: $e', failed: true),
+        onDone: () => _setState(false, false, 'Connection closed.'),
+        onError: (e) => _setState(false, true, 'Error: $e'),
       );
+      _shell!.stderr
+          .listen((data) => _terminal.write(String.fromCharCodes(data)));
 
-      // stderr -> also show it in the terminal
-      _shell!.stderr.listen((data) => _terminal.write(String.fromCharCodes(data)));
-
-      _setStatus('Connected', failed: false);
+      _setState(true, false, 'Connected');
     } catch (e) {
       _terminal.write('\r\n*** Connection failed: $e ***\r\n');
-      _setStatus('Failed: $e', failed: true);
+      _setState(false, true, 'Connection failed');
     }
   }
 
-  void _setStatus(String s, {required bool failed}) {
+  void _setState(bool connected, bool failed, String hint) {
     if (!mounted) return;
     setState(() {
-      _status = s;
+      _connected = connected;
       _failed = failed;
+      _hint = hint;
     });
   }
 
@@ -80,43 +81,61 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dot =
+        _failed ? KKColors.red : (_connected ? KKColors.green : KKColors.muted);
     return Scaffold(
+      backgroundColor: KKColors.terminalBg,
       appBar: AppBar(
-        title: Text(widget.host.label, style: const TextStyle(fontFamily: 'monospace')),
+        backgroundColor: KKColors.rail,
+        title: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.host.label,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _hint,
+                    style: const TextStyle(fontSize: 11, color: KKColors.muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.folder_open),
+            icon: const Icon(Icons.folder_outlined),
             tooltip: 'SFTP browser',
-            onPressed: () => Navigator.push(
-              context,
+            onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => SftpScreen(host: widget.host, password: widget.password),
+                builder: (_) =>
+                    SftpScreen(host: widget.host, password: widget.password),
               ),
             ),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(24),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            color: _failed ? const Color(0xFF3A1414) : const Color(0xFF0F2A1A),
-            child: Text(
-              _status,
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'monospace',
-                color: _failed ? const Color(0xFFFF7B72) : const Color(0xFF7EE787),
-              ),
-            ),
-          ),
-        ),
       ),
       body: SafeArea(
         child: TerminalView(
           _terminal,
-          padding: const EdgeInsets.all(8),
-          textStyle: const TerminalStyle(fontSize: 13),
+          padding: const EdgeInsets.all(10),
+          textStyle: const TerminalStyle(
+            fontSize: 13,
+            fontFamily: 'monospace',
+          ),
         ),
       ),
     );

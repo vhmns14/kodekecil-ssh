@@ -52,7 +52,8 @@ class HostStore extends ChangeNotifier {
         _seed();
         return;
       }
-      final data = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      final data =
+          jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       _hosts = (data['hosts'] as List? ?? [])
           .map((e) => Host.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
@@ -75,9 +76,16 @@ class HostStore extends ChangeNotifier {
 
   void _seed() {
     _snippets = const [
-      Snippet(id: 's1', title: 'Update & upgrade', command: 'sudo apt update && sudo apt upgrade -y'),
+      Snippet(
+          id: 's1',
+          title: 'Update & upgrade',
+          command: 'sudo apt update && sudo apt upgrade -y'),
       Snippet(id: 's2', title: 'Disk usage', command: 'df -h'),
-      Snippet(id: 's3', title: 'Docker ps', command: 'docker ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"'),
+      Snippet(
+          id: 's3',
+          title: 'Docker ps',
+          command:
+              'docker ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"'),
     ];
   }
 

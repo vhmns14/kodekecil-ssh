@@ -10,6 +10,7 @@ import '../utils/remote_path.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../models/host.dart';
+import '../theme.dart';
 import '../services/ssh_service.dart';
 
 class SftpScreen extends StatefulWidget {
@@ -40,7 +41,8 @@ class _SftpScreenState extends State<SftpScreen> {
 
   Future<void> _connect() async {
     try {
-      _conn = await SSHService().connect(widget.host, password: widget.password);
+      _conn =
+          await SSHService().connect(widget.host, password: widget.password);
       _sftp = await _conn!.openSftp();
       await refresh();
     } catch (e) {
@@ -66,7 +68,9 @@ class _SftpScreenState extends State<SftpScreen> {
       });
       if (!mounted) return;
       setState(() {
-        _entries = entries.where((e) => e.filename != '.' && e.filename != '..').toList();
+        _entries = entries
+            .where((e) => e.filename != '.' && e.filename != '..')
+            .toList();
         _status = 'OK';
       });
     } catch (e) {
@@ -126,7 +130,7 @@ class _SftpScreenState extends State<SftpScreen> {
         },
         closeDestination: true,
       );
-      _setStatus('Tersimpan: ${dest.path}');
+      _setStatus('Saved: ${dest.path}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Downloaded to ${dest.path}')),
@@ -157,7 +161,8 @@ class _SftpScreenState extends State<SftpScreen> {
       try {
         var sent = 0;
         while (sent < bytes.length) {
-          final end = (sent + chunk > bytes.length) ? bytes.length : sent + chunk;
+          final end =
+              (sent + chunk > bytes.length) ? bytes.length : sent + chunk;
           await f.writeBytes(
             Uint8List.fromList(bytes.sublist(sent, end)),
             offset: sent,
@@ -185,8 +190,11 @@ class _SftpScreenState extends State<SftpScreen> {
         title: const Text('Rename'),
         content: TextField(controller: ctrl, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(c, ctrl.text.trim()), child: const Text('OK')),
+          TextButton(
+              onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(c, ctrl.text.trim()),
+              child: const Text('OK')),
         ],
       ),
     );
@@ -207,8 +215,12 @@ class _SftpScreenState extends State<SftpScreen> {
         title: Text('Delete ${isDir ? "folder" : "file"}?'),
         content: Text(entry.filename),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Delete')),
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Delete')),
         ],
       ),
     );
@@ -233,8 +245,11 @@ class _SftpScreenState extends State<SftpScreen> {
         title: const Text('New folder'),
         content: TextField(controller: ctrl, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(c, ctrl.text.trim()), child: const Text('OK')),
+          TextButton(
+              onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(c, ctrl.text.trim()),
+              child: const Text('OK')),
         ],
       ),
     );
@@ -267,26 +282,59 @@ class _SftpScreenState extends State<SftpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_cwd, style: const TextStyle(fontFamily: 'monospace', fontSize: 15)),
+        backgroundColor: KKColors.rail,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('SFTP',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            Text(
+              _cwd,
+              style: const TextStyle(
+                  fontFamily: 'monospace', fontSize: 12, color: KKColors.muted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.arrow_upward), tooltip: 'Naik', onPressed: _goUp),
-          IconButton(icon: const Icon(Icons.create_new_folder), tooltip: 'New folder', onPressed: _mkdir),
-          IconButton(icon: const Icon(Icons.upload_file), tooltip: 'Upload', onPressed: _upload),
-          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Refresh', onPressed: refresh),
+          IconButton(
+              icon: const Icon(Icons.arrow_upward),
+              tooltip: 'Up',
+              onPressed: _goUp),
+          IconButton(
+              icon: const Icon(Icons.create_new_folder_outlined),
+              tooltip: 'New folder',
+              onPressed: _mkdir),
+          IconButton(
+              icon: const Icon(Icons.upload_file_outlined),
+              tooltip: 'Upload',
+              onPressed: _upload),
+          IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: refresh),
         ],
         bottom: _busy && _progress != null
             ? PreferredSize(
-                preferredSize: const Size.fromHeight(28),
+                preferredSize: const Size.fromHeight(30),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: Row(
                     children: [
                       Expanded(
-                        child: LinearProgressIndicator(value: _progress),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(value: _progress),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(_progressLabel,
-                          style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                              color: KKColors.muted)),
                     ],
                   ),
                 ),
@@ -295,45 +343,87 @@ class _SftpScreenState extends State<SftpScreen> {
       ),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Text(_status, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-          ),
           if (_busy && _progress == null)
-            const LinearProgressIndicator(),
+            const LinearProgressIndicator(minHeight: 2),
           Expanded(
             child: RefreshIndicator(
               onRefresh: refresh,
+              color: KKColors.blue,
               child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: _entries.length,
                 itemBuilder: (context, i) {
                   final e = _entries[i];
                   final isDir = e.attr.isDirectory;
-                  return ListTile(
-                    leading: Icon(
-                      isDir ? Icons.folder : Icons.insert_drive_file,
-                      color: isDir ? const Color(0xFF2F81F7) : null,
-                    ),
-                    title: Text(e.filename, style: const TextStyle(fontFamily: 'monospace')),
-                    subtitle: isDir ? null : Text(_fmtSize(e.attr.size)),
-                    onTap: isDir ? () => _enter(e.filename) : null,
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (v) {
-                        if (v == 'dl') _download(e);
-                        if (v == 'rn') _rename(e);
-                        if (v == 'del') _delete(e);
-                      },
-                      itemBuilder: (c) => [
-                        if (!isDir)
-                          const PopupMenuItem(value: 'dl', child: Text('Download')),
-                        const PopupMenuItem(value: 'rn', child: Text('Rename')),
-                        const PopupMenuItem(value: 'del', child: Text('Delete')),
-                      ],
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: KKColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 2),
+                        leading: HostTile(
+                          color: isDir ? KKColors.blue : KKColors.surface2,
+                          icon: isDir
+                              ? Icons.folder_rounded
+                              : Icons.insert_drive_file_outlined,
+                          size: 44,
+                        ),
+                        title: Text(
+                          e.filename,
+                          style: const TextStyle(
+                              fontFamily: 'monospace', color: KKColors.text),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: isDir
+                            ? null
+                            : Text(
+                                _fmtSize(e.attr.size),
+                                style: const TextStyle(
+                                    color: KKColors.muted, fontSize: 12),
+                              ),
+                        onTap: isDir ? () => _enter(e.filename) : null,
+                        trailing: PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_horiz,
+                              color: KKColors.muted),
+                          onSelected: (v) {
+                            if (v == 'dl') _download(e);
+                            if (v == 'rn') _rename(e);
+                            if (v == 'del') _delete(e);
+                          },
+                          itemBuilder: (c) => [
+                            if (!isDir)
+                              const PopupMenuItem(
+                                  value: 'dl', child: Text('Download')),
+                            const PopupMenuItem(
+                                value: 'rn', child: Text('Rename')),
+                            const PopupMenuItem(
+                                value: 'del', child: Text('Delete')),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 },
               ),
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: KKColors.divider)),
+            ),
+            child: Text(
+              _status,
+              style: const TextStyle(
+                  fontFamily: 'monospace', fontSize: 12, color: KKColors.muted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
